@@ -147,7 +147,6 @@ const SatelitteMap = (context: any) => {
   const [value_tab_draw, setValue_tab_draw] = React.useState(0);
   const [value_tab_pb, setValue_tab_pb] = React.useState(0);
   const [value_tab_dv, setValue_tab_dv] = React.useState(0);
-  const [value_tab_layer, setValue_tab_layer] = React.useState(0);
 
   const handleTabDrawChange = (
     event: React.SyntheticEvent,
@@ -160,12 +159,6 @@ const SatelitteMap = (context: any) => {
   };
   const handleTabDVChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue_tab_dv(newValue);
-  };
-  const handleTabLayerChange = (
-    event: React.SyntheticEvent,
-    newValue: number
-  ) => {
-    setValue_tab_layer(newValue);
   };
 
   //-------------***************  Page Visual Elements Setting *************---------------\\
@@ -214,9 +207,7 @@ const SatelitteMap = (context: any) => {
   const readFile = require("./utils/readCsvFile");
   const [csvData, setCsvData] = useState<any[]>([]);
   const [csvHeader, setCsvHeader] = useState<string[]>([]);
-  const manageCsvData = (data: any) => {
-    setCsvData((prevNames) => [...prevNames, data]);
-  };
+
 
   const readCSVFile = (e: any) => {
     const file = e.target.files[0];
@@ -267,99 +258,8 @@ const SatelitteMap = (context: any) => {
 
   const [currentLayerDataHeader, setCurrentLayerDataHeader] = useState<string[]>([]); // Key Field of currently selected layer GeoData
 
-  const [allTableData, setAllTableData] = useState<any[]>([]);
-
-  const [currentMarkerData, setCurrentMarkerData] = useState<{ data: any; id: number; }>(); // Get current selected a point data of layer.
-
   const [initFlag, setInitFlag] = useState(false); // When open page,,, load data. send signal from UI to map controller
 
-  //-------------------------*************** Data Table UI Controller *******************--------------------//
-
-  const [boxWidth, setBoxWidth] = useState(400);
-  const [boxHeight, setBoxHeight] = useState(800);
-  const [isResizing, setIsResizing] = useState(false);
-  const [draggable, setDraggable] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [startY, setStartY] = useState(0);
-  const [position, setPosition] = useState({ x: 0, y: 84 });
-  const handleDrag = (event: DraggableEvent, data: DraggableData) => {
-    setPosition({ x: data.x, y: data.y });
-  };
-
-  const [isMinimized, setIsMinimized] = useState(false);
-
-  const toggleMinimized = () => {
-    setIsMinimized(!isMinimized);
-  };
-
-  const handleMouseDown = (event: any) => {
-    const cornerWidth = 20; // set the width of the corner area
-    const cornerHeight = 20; // set the height of the corner area
-
-    const isCornerClicked =
-      event.clientX > boxWidth - cornerWidth &&
-      event.clientY > boxHeight - cornerHeight;
-    if (isCornerClicked) {
-      setIsResizing(true);
-      setDraggable(true);
-      setStartX(event.clientX);
-      setStartY(event.clientY);
-    } else {
-      setIsResizing(false);
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsResizing(false);
-    setDraggable(false);
-  };
-
-  const handleMouseMove = (event: any) => {
-    if (isResizing) {
-      setDraggable(true);
-      const newWidth = Math.max(50, boxWidth + event.clientX - startX);
-      const newHeight = Math.max(50, boxHeight + event.clientY - startY);
-      setBoxWidth(newWidth);
-      setBoxHeight(newHeight);
-      setStartX(event.clientX);
-      setStartY(event.clientY);
-    }
-  };
-
-  //-----------------------********************** Data Table Pagination Controller **********************-------------------\\
-  const rowsPerPage = 15;
-  const [currentPage, setCurrentPage] = useState(1);
-  const [currentPageData, setCurrentPageData] = useState<any>([]);
-  function getNumPages(rows: any[]): number {
-    // Calculate the total number of pages based on the total number of rows and the rows per page
-    return Math.ceil(rows.length / rowsPerPage);
-  }
-  function nextPage(): void {
-    if (currentPage < getNumPages(currentLayerData)) {
-      setCurrentPage(currentPage + 1);
-    }
-  }
-  function prevPage(): void {
-    // Show the previous page of data
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  }
-  function showTable(temp: any) {
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = Math.min(startIndex + rowsPerPage, temp.length);
-
-    // Retrieve the relevant rows from the data source
-    const pageRows = temp.slice(startIndex, endIndex);
-    setCurrentPageData(pageRows);
-  }
-  useEffect(() => {
-    showTable(currentLayerData);
-  }, [currentPage])
-
-  useEffect(() => {
-    showTable(currentLayerData);
-  }, [currentLayerData])
 
 
   //-------------------------****************** Left SideBar Setting UI Controller *******************--------------------//
@@ -453,80 +353,18 @@ const SatelitteMap = (context: any) => {
       const updatedGeo = allGeodata.filter((obj) => obj.name !== mCurrentLayer);
       setAllGeodata(updatedGeo);
 
-      const updatedTable = allTableData.filter(
-        (obj) => obj.name !== mCurrentLayer
-      );
-      setAllTableData(updatedTable);
 
       const gjson = JSON.stringify(updatedGeo, null, 2);
       const ljson = JSON.stringify(updatedArray, null, 2);
-      const tjson = JSON.stringify(updatedTable, null, 2);
 
       blobg = new Blob([gjson], { type: "application/json" });
       blobl = new Blob([ljson], { type: "application/json" });
-      blobt = new Blob([tjson], { type: "application/json" });
     }
   }
 
   //------------------**************** Manual Data Import Setting ******************--------------------\\
 
   const [mCurrentLayer, setMCurrentLayer] = useState<string>(); // current Layer in Data Setting Panel, we will use this to remove layers.
-  const [mNewFieldData, setMNewFieldData] = useState<string[]>([]);
-  const [acceptField, setAcceptField] = useState(false);
-  const [fieldName, setFieldName] = useState<string>();
-  const handlFieldName = (str: string) => {
-    setFieldName(str);
-  };
-  const addFieldName = () => {
-    if (fieldName) {
-      setMNewFieldData((prevNames) => [...prevNames, fieldName]);
-    }
-  };
-  const acceptDataField = () => {
-    interface MyObject {
-      [key: string]: string;
-    }
-
-    setAcceptField(true);
-
-    const myObject: MyObject = {};
-    mNewFieldData.forEach((str) => {
-      const [key, value] = str.split(":");
-      myObject[key] = "Empty";
-    });
-
-    const features = [
-      {
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [45, 45],
-        },
-        properties: myObject,
-      },
-      // Add more features as needed
-    ];
-    const geojson = {
-      type: "FeatureCollection",
-      features: features,
-    };
-    setGeodata([]);
-    setGeodata(geojson);
-
-    setCsvData([]);
-
-    const cheader = Object.keys(geojson.features[0].properties);
-    setCsvHeader(cheader);
-
-    const array = geojson.features.map((i: any) => {
-      const values = i.properties;
-      const obj = cheader.reduce((object: any, header, index) => {
-        object[header] = values[header];
-        return object;
-      }, {});
-      return obj;
-    });
-  };
 
 
   //----------------------******************** Marker Image Control **********************-------------------\\
@@ -791,25 +629,6 @@ const SatelitteMap = (context: any) => {
 
   //-----------------************ Update blog data to store layers & geoData in firebase  and then set current layer data **************-------------------\\
 
-  function checkNewTableData(data: any, name: string) {
-    if (data.length != 0) {
-      let cnt = 0;
-      data.map((d: any, index: number) => {
-        if (d.name === name) {
-          cnt++;
-        }
-      });
-
-      if (cnt == 0) {
-        return false;
-      } else {
-        return true;
-      }
-      // return false;
-    } else {
-      return false;
-    }
-  }
   useEffect(() => {
     if (currentLayerName) {
       markerImageFiles.map((data, index) => {
@@ -823,74 +642,31 @@ const SatelitteMap = (context: any) => {
       blobg = new Blob([gjson], { type: "application/json" });
       blobl = new Blob([ljson], { type: "application/json" });
 
-      // saveAs(blobg, `geo${userId}.json`);
-      // saveAs(blobl, `layer${userId}.json`);
-      setCurrentPage(1);
-      if (checkNewTableData(allTableData, currentLayerName)) {
-        allTableData.map((data: any, index: number) => {
-          if (data.name === currentLayerName) {
-            setCurrentLayerDataHeader(data.header);
-            setCurrentLayerData(data.data);
-            setLoading(false);
-          }
-        });
-      } else {
-        allGeodata.map((data, index) => {
-          if (data.name === currentLayerName) {
-            const cheader = Object.keys(data.data.features[0].properties);
-            setCurrentLayerDataHeader(cheader);
-            setCurrentLayerData([]);
-            // setCurrentLayerData(geoJsonFeatureToTableRows(data.data.features));
-            const array = data.data.features.map((i: any, index: number) => {
-              const values = i.properties;
-              const obj = cheader.reduce((object: any, header, index) => {
-                object[header] = values[header];
-                return object;
-              }, {});
+      allGeodata.map((data, index) => {
+        if (data.name === currentLayerName) {
+          const cheader = Object.keys(data.data.features[0].properties);
+          setCurrentLayerDataHeader(cheader);
+          setCurrentLayerData([]);
+          // setCurrentLayerData(geoJsonFeatureToTableRows(data.data.features));
+          const array = data.data.features.map((i: any, index: number) => {
+            const values = i.properties;
+            const obj = cheader.reduce((object: any, header, index) => {
+              object[header] = values[header];
+              return object;
+            }, {});
 
-              setCurrentLayerData((prevNames) => [...prevNames, obj]);
-            });
-            setLoading(false);
-          }
-        });
-      }
-      // showTable(currentLayerData)
+            setCurrentLayerData((prevNames) => [...prevNames, obj]);
+          });
+          setLoading(false);
+        }
+      });
+
     }
   }, [currentLayerName]);
 
 
-  //----------------******** Update Table Data after loading ********-----------------\\
-  useEffect(() => {
-    if (loading == false) {
-      if (currentLayerData.length != 0) {
-        const isDataExists = allTableData.some(
-          (data) => data.name === currentLayerName
-        );
-        if (!isDataExists) {
-          let tempTableData = allTableData;
-          tempTableData.push({
-            data: currentLayerData,
-            header: currentLayerDataHeader,
-            name: currentLayerName,
-          });
 
-          setAllTableData(tempTableData);
-        }
-      }
-    }
-  }, [loading]);
 
-  //-----------------********* Store All table Data to Blob whenever it updated ***********--------------\\
-  useEffect(() => {
-    if (allTableData) {
-      if (allTableData.length != 0) {
-        // localStorage.setItem("tableData", JSON.stringify(allTableData));
-
-        const jsonContent = JSON.stringify(allTableData, null, 2);
-        blobt = new Blob([jsonContent], { type: "application/json" });
-      }
-    }
-  }, [allTableData]);
   //--------------------*************** Loading Data when open workspace **************-------------------\\
   useEffect(() => {
     // set action to be performed when component unmounts
@@ -909,15 +685,12 @@ const SatelitteMap = (context: any) => {
 
     const gjson = JSON.stringify(allGeodata, null, 2);
     const ljson = JSON.stringify(dataLayers, null, 2);
-    const tjson = JSON.stringify(allTableData, null, 2);
 
     blobg = new Blob([gjson], { type: "application/json" });
     blobl = new Blob([ljson], { type: "application/json" });
-    blobt = new Blob([tjson], { type: "application/json" });
 
     const geoRef = ref(storage, `${userId}/geo.json`);
     const layerRef = ref(storage, `${userId}/layer.json`);
-    const tableRef = ref(storage, `${userId}/table.json`);
 
     await uploadBytes(geoRef, blobg as Blob).then((snapshot) => {
       console.log("Uploaded an array!");
@@ -926,13 +699,10 @@ const SatelitteMap = (context: any) => {
     await uploadBytes(layerRef, blobl as Blob).then((snapshot) => {
       console.log("Uploaded an array!");
     });
-    await uploadBytes(tableRef, blobt as Blob).then((snapshot) => {
-      console.log("Uploaded an array!");
-    });
+
     setLoading(false);
     console.log("BLOB");
     blobg = "";
-    blobt = "";
     blobl = "";
     // }
   };
@@ -945,9 +715,8 @@ const SatelitteMap = (context: any) => {
 
     const geoRef = ref(storage, `${userId}/geo.json`);
     const layerRef = ref(storage, `${userId}/layer.json`);
-    const tableRef = ref(storage, `${userId}/table.json`);
 
-    if (geoRef && layerRef && tableRef) {
+    if (geoRef && layerRef) {
       await getDownloadURL(geoRef)
         .then((url) => {
           fetch(url)
@@ -965,21 +734,6 @@ const SatelitteMap = (context: any) => {
           // Handle any errors
         });
 
-      await getDownloadURL(tableRef)
-        .then((url) => {
-          fetch(url)
-            .then((response) => response.json())
-            .then((jsonData) => {
-              setAllTableData(jsonData);
-            })
-            .catch((error) => {
-              console.error("Error retrieving JSON data", error);
-            });
-        })
-        .catch((error) => {
-          console.log(error);
-          // Handle any errors
-        });
 
       await getDownloadURL(layerRef)
         .then((url) => {
@@ -1022,20 +776,6 @@ const SatelitteMap = (context: any) => {
     temp.push(aData.properties);
     setCurrentLayerData(temp);
 
-    const updateTableData = allTableData.map((obj: any, index: number) => {
-      // 👇️ if id equals 2, update country property
-      if (obj.name === currentLayerName) {
-        return {
-          data: temp,
-          header: currentLayerDataHeader,
-          name: currentLayerName,
-        };
-      }
-      // 👇️ otherwise return the object as is
-      return obj;
-    });
-
-    setAllTableData(updateTableData);
   };
 
   const updateCurrentLayerData = (uData: any) => {
@@ -1047,22 +787,6 @@ const SatelitteMap = (context: any) => {
     console.log("1-", temp);
     setCurrentLayerData(temp);
 
-    showTable(temp);
-
-    const updateTableData = allTableData.map((obj: any, index: number) => {
-      // 👇️ if id equals 2, update country property
-      if (obj.name === currentLayerName) {
-        return {
-          data: temp,
-          header: currentLayerDataHeader,
-          name: currentLayerName,
-        };
-      }
-      // 👇️ otherwise return the object as is
-      return obj;
-    });
-
-    setAllTableData(updateTableData);
   };
 
   const deleteCurrentLayerData = (index: number) => {
@@ -1070,22 +794,6 @@ const SatelitteMap = (context: any) => {
     temp.splice(index, 1);
     setCurrentLayerData(temp);
 
-    showTable(temp);
-
-    const updateTableData = allTableData.map((obj: any, index: number) => {
-      // 👇️ if id equals 2, update country property
-      if (obj.name === currentLayerName) {
-        return {
-          data: temp,
-          header: currentLayerDataHeader,
-          name: currentLayerName,
-        };
-      }
-      // 👇️ otherwise return the object as is
-      return obj;
-    });
-
-    setAllTableData(updateTableData);
   };
 
   //--------------------****************** Connect UI to Map *******************----------------------------\\
@@ -1190,15 +898,6 @@ const SatelitteMap = (context: any) => {
           }}
         >
           P&B
-        </button>
-        <button
-          className="toolButton"
-          onClick={() => {
-            if (pbVisible) setPbVisible(0);
-            else setPbVisible(1);
-          }}
-        >
-          TG
         </button>
       </div>
 
@@ -1382,280 +1081,137 @@ const SatelitteMap = (context: any) => {
       </div>
 
       {/* ---------------------------Point Data layout ----------------------- */}
-      <Draggable position={position} onDrag={handleDrag} disabled={draggable}>
-        <div
-          style={{
-            position: "fixed",
-            right: "0%",
-            // top: "0%",
-            zIndex: "1",
-            width: boxWidth,
-            height: isMinimized ? 0 : boxHeight,
-            // height: "64%",
-            opacity: 0.75,
-            background: "black",
-            transition: "height 0.5s ease",
-          }}
-        >
-          <div>
-            <button
-              style={{
-                position: "absolute",
-                width: "40px",
-                height: "30px",
-                marginLeft: "-40px",
-                top: "50%",
-                background: "black",
-                opacity: "0.75",
-                color: "white",
-              }}
-              onClick={toggleMinimized}
-            >
-              {isMinimized ? "show" : "hide"}
-            </button>
-          </div>
-          <Box
-            sx={{ width: "100%" }}
-            style={{
-              display: isMinimized ? "none" : "block",
-              height: isMinimized ? 0 : boxHeight,
-            }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
+      <div
+        style={{
+          position: "fixed",
+          right: "0%",
+          top: "64px",
+          zIndex: "1",
+          width: '400px',
+          height: "100%",
+          opacity: 0.75,
+          background: "lightslategrey",
+          transition: "height 0.5s ease",
+        }}
+      >
+
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs
+            value={value_tab_dv}
+            onChange={handleTabDVChange}
+            aria-label="basic tabs example"
           >
-            <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-              <Tabs
-                value={value_tab_dv}
-                onChange={handleTabDVChange}
-                aria-label="basic tabs example"
-              >
-                <Tab
-                  label="Layer"
-                  {...tabProps_DV(0)}
-                  style={{ color: "white", width: "50%" }}
-                  onClick={() => {
-                  }}
-                />
-                <Tab
-                  label="Data"
-                  {...tabProps_DV(1)}
-                  style={{ color: "white", width: "50%" }}
-                  onClick={() => {
-                  }}
-                />
-              </Tabs>
-            </Box>
-            <TabPanel_DV value={value_tab_dv} index={0}>
-              <List
-                sx={{
-                  width: "100%",
-                  maxWidth: 360,
-                  bgcolor: "background.paper",
-                }}
-                style={{
-                  background: "black",
-                  padding: "7%",
-                  maxWidth: "100%",
-                }}
-              >
-                {dataLayers.map((data, index) => {
-                  return (
-                    <ListItem
-                      alignItems="flex-start"
-                      onClick={() => setCurrentLayerName(data)}
-                      className={`list-item ${currentLayerName == data && "active"
-                        }`}
-                      style={{
-                        textAlign: "center",
-                        alignItems: "center",
-                        color: "white",
-                      }}
-                    >
-                      <ListItemAvatar>
-                        {selectedLayerImageFile && (
-                          <Avatar
-                            style={{
-                              width: "100%",
-                              height: "120px",
-                              borderRadius: "10px",
-                            }}
-                            alt="Remy Sharp"
-                            src={layerImageFiles[index]}
-                          />
-                        )}
-                      </ListItemAvatar>
-                      <ListItemText
-                        style={{ marginLeft: "15px" }}
-                        primary={data}
-                      />
-                      {dataLayersVisible.find((obj) => obj.layerName === data)
-                        .visible ? (
-                        <FaEyeSlash
-                          onClick={() => {
-                            setDataLayersVisible((prevObjects) => {
-                              const updatedObjects = prevObjects.map((obj) => {
-                                if (obj.layerName === data) {
-                                  return {
-                                    ...obj,
-                                    visible: !dataLayersVisible.find(
-                                      (obj) => obj.layerName === data
-                                    ).visible,
-                                  };
-                                }
-                                return obj;
-                              });
-                              return updatedObjects;
-                            });
-                          }}
-                        />
-                      ) : (
-                        <FaEye
-                          onClick={() => {
-                            setDataLayersVisible((prevObjects) => {
-                              const updatedObjects = prevObjects.map((obj) => {
-                                if (obj.layerName === data) {
-                                  return {
-                                    ...obj,
-                                    visible: !dataLayersVisible.find(
-                                      (obj) => obj.layerName === data
-                                    ).visible,
-                                  };
-                                }
-                                return obj;
-                              });
-                              return updatedObjects;
-                            });
-                          }}
-                        />
-                      )}
-                    </ListItem>
-                  );
-                })}
-              </List>
-            </TabPanel_DV>
-            <TabPanel_DV value={value_tab_dv} index={1}>
-              <div>
-                <div
-                  style={{
-                    color: "white",
-                    textAlign: "center",
-                    padding: "20px",
-                  }}
-                >
-                  Data Table
-                </div>
-                <div
-                  className=""
-                  style={{
-                    position: "absolute",
-                    right: "0px",
-                    zIndex: "1",
-                    background: "black",
-                    opacity: "0.75",
-                    color: "white",
-                    height: boxHeight * 0.85 - 50,
-                    padding: "5px",
-                    width: "100%",
-                  }}
-                >
-                  <table
-                    className="large-2"
-                    style={{
-                      textAlign: "center",
-                      width: "100%",
-                      overflowY: "scroll",
-                      display: "block",
-                      height: "88%",
-                      borderBottom: "0.01em solid white",
-                    }}
-                  >
-                    <thead
-                      style={{
-                        top: "0",
-                        position: "sticky",
-                        background: "gray",
-                      }}
-                    >
-                      <tr style={{}}>
-                        {currentLayerDataHeader.map((data, index) => {
-                          return (
-                            <td style={{ textAlign: "center" }}>{data}</td>
-                          );
-                        })}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentPageData.map((data: any, index: number) => (
-                        <tr
-                          style={{}}
-                          onClick={() => {
-                            setCurrentMarkerData({ data: data, id: index });
-                          }}
-                          className={`markerTable ${currentMarkerData?.data == data && "active"
-                            }`}
-                        >
-                          {currentLayerDataHeader.map((header, index) => {
-                            return (
-                              <td
-                                style={{
-                                  textAlign: "center",
-                                  padding: "10px",
-                                }}
-                              >
-                                {data[header]}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-evenly",
-                        position: "absolute",
-                        bottom: "0",
-                        marginLeft: "35%",
-                        width: "30%",
-                      }}
-                    >
-                      <label
-                        className="csv"
-                        id="prev-button"
-                        onClick={prevPage}
-                      >
-                        prev
-                      </label>
-                      <label className="csv">{currentPage}</label>
-                      <label
-                        className="csv"
-                        id="next-button"
-                        onClick={nextPage}
-                      >
-                        next
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabPanel_DV>
-            <div
-              style={{
-                width: 20,
-                height: 20,
-                background: "white",
-                position: "absolute",
-                bottom: "0",
-                right: "0",
-                zIndex: "10",
+            <Tab
+              label="Layer"
+              {...tabProps_DV(0)}
+              style={{ color: "white", width: "50%" }}
+              onClick={() => {
               }}
-            ></div>
-          </Box>
-        </div>
-      </Draggable>
+            />
+            <Tab
+              label="Data"
+              {...tabProps_DV(1)}
+              style={{ color: "white", width: "50%" }}
+              onClick={() => {
+              }}
+            />
+          </Tabs>
+        </Box>
+        <TabPanel_DV value={value_tab_dv} index={0}>
+          <List
+            sx={{
+              width: "100%",
+              maxWidth: 360,
+              bgcolor: "background.paper",
+            }}
+            style={{
+              background: "lightslategrey",
+              padding: "7%",
+              maxWidth: "100%",
+            }}
+          >
+            {dataLayers.map((data, index) => {
+              return (
+                <ListItem
+                  alignItems="flex-start"
+                  onClick={() => setCurrentLayerName(data)}
+                  className={`list-item ${currentLayerName == data && "active"
+                    }`}
+                  style={{
+                    textAlign: "center",
+                    alignItems: "center",
+                    color: "white",
+                  }}
+                >
+                  <ListItemAvatar>
+                    {selectedLayerImageFile && (
+                      <Avatar
+                        style={{
+                          width: "100%",
+                          height: "120px",
+                          borderRadius: "10px",
+                        }}
+                        alt="Remy Sharp"
+                        src={layerImageFiles[index]}
+                      />
+                    )}
+                  </ListItemAvatar>
+                  <ListItemText
+                    style={{ marginLeft: "15px" }}
+                    primary={data}
+                  />
+                  {dataLayersVisible.find((obj) => obj.layerName === data)
+                    .visible ? (
+                    <FaEyeSlash
+                      onClick={() => {
+                        setDataLayersVisible((prevObjects) => {
+                          const updatedObjects = prevObjects.map((obj) => {
+                            if (obj.layerName === data) {
+                              return {
+                                ...obj,
+                                visible: !dataLayersVisible.find(
+                                  (obj) => obj.layerName === data
+                                ).visible,
+                              };
+                            }
+                            return obj;
+                          });
+                          return updatedObjects;
+                        });
+                      }}
+                    />
+                  ) : (
+                    <FaEye
+                      onClick={() => {
+                        setDataLayersVisible((prevObjects) => {
+                          const updatedObjects = prevObjects.map((obj) => {
+                            if (obj.layerName === data) {
+                              return {
+                                ...obj,
+                                visible: !dataLayersVisible.find(
+                                  (obj) => obj.layerName === data
+                                ).visible,
+                              };
+                            }
+                            return obj;
+                          });
+                          return updatedObjects;
+                        });
+                      }}
+                    />
+                  )}
+                </ListItem>
+              );
+            })}
+          </List>
+        </TabPanel_DV>
+        <TabPanel_DV value={value_tab_dv} index={1}>
+          <div>
+
+          </div>
+        </TabPanel_DV>
+
+      </div>
 
       {/* -------------------------   P&B layout --------------------- */}
       <Draggable
@@ -2325,58 +1881,6 @@ const SatelitteMap = (context: any) => {
               >
                 <div
                   style={{
-                    fontSize: "24px",
-                    lineHeight: "45px",
-                    width: "100%",
-                    height: "50px",
-                    textAlign: "center",
-                    paddingTop: "10px",
-                  }}
-                >
-                  Preview Data
-                </div>
-                <table
-                  className="large-2"
-                  style={{
-                    // textAlign: "center",
-                    width: "100%",
-                    height: "25%",
-                    display: "table-cell",
-                    overflow: "scroll",
-                    marginBottom: "0px",
-                    borderBottom: "0.01em solid white",
-                    // height: "100%"
-                  }}
-                >
-                  <thead
-                    style={{ background: "gray", position: "sticky", top: "0" }}
-                  >
-                    <tr style={{}}>
-                      {csvHeader.map((data, index) => {
-                        return <td style={{ textAlign: "center" }}>{data}</td>;
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody style={{}}>
-                    {csvData.map((data, index) => {
-                      return (
-                        <tr style={{}}>
-                          {csvHeader.map((header, index) => {
-                            return (
-                              <td
-                                style={{ textAlign: "center", padding: "10px" }}
-                              >
-                                {data[header]}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <div
-                  style={{
                     fontSize: "20px",
                     lineHeight: "45px",
                     width: "100%",
@@ -2390,286 +1894,37 @@ const SatelitteMap = (context: any) => {
                 <div
                   style={{
                     display: "flex",
-                    flexDirection: "row",
-                    height: "60%",
-                    padding: "10px",
-                    justifyContent: "space-around",
+                    justifyContent: "space-evenly",
                   }}
                 >
-                  <div style={{ width: "48%", border: "0.01em solid white" }}>
-                    <div
-                      style={{
-                        fontSize: "16px",
-                        lineHeight: "45px",
-                        width: "100%",
-                        height: "50px",
-                        textAlign: "center",
-                        padding: "5px",
-                        borderBottom: "0.01em solid white",
-                      }}
-                    >
-                      Create Data Field
-                    </div>
-
-                    <Box sx={{ width: "100%" }} style={{ height: "86%" }}>
-                      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                        <Tabs
-                          value={value_tab_layer}
-                          onChange={handleTabLayerChange}
-                          aria-label="basic tabs example"
-                        >
-                          <Tab
-                            label="From CSV"
-                            {...tapProps_PB(0)}
-                            style={{ color: "white", width: "50%" }}
-                            onClick={() => {
-                              setInputMode("csv");
-                            }}
-                          />
-                          <Tab
-                            label="Manual"
-                            {...tapProps_PB(1)}
-                            style={{ color: "white", width: "50%" }}
-                            onClick={() => {
-                              setInputMode("manual");
-                            }}
-                          />
-                        </Tabs>
-                      </Box>
-                      <TabPanel_PB value={value_tab_layer} index={0}>
-                        <div
-                          className="drawTab"
-                          style={{ height: "395px", padding: "10px" }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              height: "56%",
-                              width: "90%",
-                              transform: "translateX(5%)",
-                              marginBottom: "10px",
-                              borderRadius: "10px",
-                              border: "0.01em solid white",
-                              flexDirection: "column",
-                              padding: "27px",
-                            }}
-                          >
-                            {csvHeader.map((data, index) => {
-                              return (
-                                <>
-                                  <div
-                                    style={{
-                                      width: "100%",
-                                      display: "flex",
-                                      flexDirection: "row",
-                                      justifyContent: "space-between",
-                                    }}
-                                  >
-                                    <div>{data}</div>
-                                    {/* <div style={{ display: 'flex' }}>
-                                          <button style={{ width: '100%' }}>E</button>
-                                          <button style={{ width: '100%' }}>D</button>
-                                        </div> */}
-                                  </div>
-                                </>
-                              );
-                            })}
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-evenly",
-                            }}
-                          >
-                            <label className="csv">
-                              <input
-                                id="Image"
-                                type="file"
-                                onChange={readCSVFile}
-                              />
-                              From CSV
-                            </label>
-                          </div>
-                        </div>
-                      </TabPanel_PB>
-                      <TabPanel_PB value={value_tab_layer} index={1}>
-                        <div
-                          className="drawTab"
-                          style={{ height: "395px", padding: "10px" }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              width: "90%",
-                              transform: "translateX(5%)",
-                            }}
-                          >
-                            <input
-                              type="text"
-                              value={fieldName}
-                              onChange={(e) => {
-                                handlFieldName(e.target.value);
-                              }}
-                              placeholder="Enter a new field name"
-                              style={{ width: "100%", borderColor: "white" }}
-                            />
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              height: "45%",
-                              width: "90%",
-                              transform: "translateX(5%)",
-                              marginBottom: "10px",
-                              borderRadius: "10px",
-                              border: "0.01em solid white",
-                              flexDirection: "column",
-                              padding: "27px",
-                            }}
-                          >
-                            {mNewFieldData.map((data, index) => {
-                              return (
-                                <>
-                                  <div
-                                    style={{
-                                      width: "100%",
-                                      display: "flex",
-                                      flexDirection: "row",
-                                      justifyContent: "space-between",
-                                    }}
-                                  >
-                                    <div>{data}</div>
-                                    <div style={{ display: "flex" }}>
-                                      <button style={{ width: "100%" }}>
-                                        E
-                                      </button>
-                                      <button style={{ width: "100%" }}>
-                                        D
-                                      </button>
-                                    </div>
-                                  </div>
-                                </>
-                              );
-                            })}
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-evenly",
-                            }}
-                          >
-                            <label
-                              className="csv"
-                              style={{ width: "30%" }}
-                              onClick={addFieldName}
-                            >
-                              Add
-                            </label>
-                            <label
-                              className="csv"
-                              style={{ width: "30%" }}
-                              onClick={() => {
-                                setMNewFieldData([]);
-                              }}
-                            >
-                              Clear
-                            </label>
-                            <label
-                              className="csv"
-                              style={{ width: "30%" }}
-                              onClick={() => {
-                                acceptDataField();
-                              }}
-                            >
-                              Accept
-                            </label>
-                          </div>
-                        </div>
-                      </TabPanel_PB>
-                    </Box>
-                  </div>
-                  <div style={{ width: "48%", border: "0.01em solid white" }}>
-                    <div
-                      style={{
-                        fontSize: "16px",
-                        lineHeight: "45px",
-                        width: "100%",
-                        height: "50px",
-                        textAlign: "center",
-                        padding: "5px",
-                        borderBottom: "0.01em solid white",
-                      }}
-                    >
-                      Properties
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        marginTop: "20px",
-                        width: "90%",
-                        transform: "translateX(5%)",
-                      }}
-                    >
-                      <input
-                        type="text"
-                        placeholder="Enter a layer name"
-                        value={layer}
-                        onChange={(e) => {
-                          setLayer(e.target.value);
-                        }}
-                        style={{ width: "100%", borderColor: "white" }}
-                      />
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-evenly",
-                      }}
-                    >
-                      <label className="csv">
-                        <input
-                          type="file"
-                          onChange={handleLayerImageFileChange}
-                        />
-                        Layer Image
-                      </label>
-                      <label className="csv">
-                        <input
-                          type="file"
-                          onChange={handleMarkerImageFileChange}
-                        />
-                        Marker Image
-                      </label>
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-evenly",
-                        height: "30%",
-                      }}
-                    >
-                      <label className="csv">
-                        {selectedLayerImageFile && (
-                          <img
-                            src={selectedLayerImageFile}
-                            alt="Selected file"
-                            style={{ height: "100%", width: "100%" }}
-                          />
-                        )}
-                      </label>
-
-                      <label className="csv">
-                        {selectedMarkerImageFile && (
-                          <img
-                            src={selectedMarkerImageFile}
-                            alt="Selected file"
-                            style={{ height: "100%", width: "100%" }}
-                          />
-                        )}
-                      </label>
-                    </div>
-                  </div>
+                  <label className="csv">
+                    <input
+                      id="Image"
+                      type="file"
+                      onChange={readCSVFile}
+                    />
+                    From CSV
+                  </label>
                 </div>
+                <div
+                  style={{
+                    display: "flex",
+                    marginTop: "20px",
+                    width: "90%",
+                    transform: "translateX(5%)",
+                  }}
+                >
+                  <input
+                    type="text"
+                    placeholder="Enter a layer name"
+                    value={layer}
+                    onChange={(e) => {
+                      setLayer(e.target.value);
+                    }}
+                    style={{ width: "100%", borderColor: "white" }}
+                  />
+                </div>
+           
               </div>
             </div>
           </div>
@@ -2686,8 +1941,6 @@ const SatelitteMap = (context: any) => {
           width: "100%",
           // marginTop: "64px",
         }}
-        onMouseUp={handleMouseUp}
-        onMouseMove={handleMouseMove}
       />
     </>
   );
