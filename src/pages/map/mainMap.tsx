@@ -114,11 +114,9 @@ function tabProps_DV(index: number) {
 
 var blobg: string | Blob;
 var blobl: string | Blob;
-var blobt: string | Blob;
 
 blobg = "";
 blobl = "";
-blobt = "";
 
 //-----------------------  Main --------------------//
 
@@ -205,8 +203,6 @@ const SatelitteMap = (context: any) => {
 
   const csv2geojson = require("csv2geojson");
   const readFile = require("./utils/readCsvFile");
-  const [csvData, setCsvData] = useState<any[]>([]);
-  const [csvHeader, setCsvHeader] = useState<string[]>([]);
 
 
   const readCSVFile = (e: any) => {
@@ -225,19 +221,6 @@ const SatelitteMap = (context: any) => {
           } else {
             setGeodata([]);
             setGeodata(result);
-
-            setCsvData([]);
-
-            const cheader = Object.keys(result.features[0].properties);
-            setCsvHeader(cheader);
-
-            // const array = result.features.map((i: any, index: number) => {
-            //   const values = i.properties;
-            //   const obj = cheader.reduce((object: any, header, index) => {
-            //     object[header] = values[header];
-            //     return object;
-            //   }, {});
-            // });
             setLoading(false);
           }
         }
@@ -245,8 +228,6 @@ const SatelitteMap = (context: any) => {
     });
   };
 
-  //---------------------************* Geo Data Input Mode(CSV or Manual) ***********--------------\\
-  const [inputMode, setInputMode] = useState<string>("csv");
 
   //------------------  **************  Data Manager   ************** ---------------\\
 
@@ -254,11 +235,8 @@ const SatelitteMap = (context: any) => {
 
   const [allGeodata, setAllGeodata] = useState<any[]>([]); // All geoData json on the map.
 
-  const [currentLayerData, setCurrentLayerData] = useState<any[]>([]); // GeoData of currently selected layer
 
-  const [currentLayerDataHeader, setCurrentLayerDataHeader] = useState<string[]>([]); // Key Field of currently selected layer GeoData
-
-  const [initFlag, setInitFlag] = useState(false); // When open page,,, load data. send signal from UI to map controller
+  const [initialLoadingFlag, setInitialLoadingFlag] = useState(false); // When open page,,, load data. send signal from UI to map controller
 
 
 
@@ -297,40 +275,21 @@ const SatelitteMap = (context: any) => {
     } else {
       setLoading(true);
       setLoadingText("Loading CSV Data");
-      setLayerImageFiles((prevNames) => [...prevNames, selectedLayerImageFile]);
-      setMarkerImageFiles((prevNames) => [
-        ...prevNames,
-        { data: selectedMarkerImageFile, layername: layer },
+
+
+      setDataLayers((layers) => [...layers, layer]);
+      setDataLayersVisible((layers) => [
+        ...layers,
+        { layerName: layer, visible: true },
       ]);
-      // setCurrentMarkerImage({ data:selectedMarkerImageFile, layername:layer});
 
-      if (inputMode === "csv") {
-        setDataLayers((layers) => [...layers, layer]);
-        setDataLayersVisible((layers) => [
-          ...layers,
-          { layerName: layer, visible: true },
-        ]);
-
-        setAddDataLayerController(!addDataLayerController);
-        if (geodata) {
-          const temp = { name: layer, data: geodata };
-          setAllGeodata((prevNames) => [...prevNames, temp]);
-        }
-        setCurrentLayerName(layer);
-      } else if (inputMode === "manual") {
-        setDataLayers((layers) => [...layers, layer]);
-        setDataLayersVisible((layers) => [
-          ...layers,
-          { layerName: layer, visible: true },
-        ]);
-
-        setCurrentLayerName(layer);
-        setAddDataLayerController(!addDataLayerController);
-        if (geodata) {
-          const temp = { name: layer, data: geodata };
-          setAllGeodata((prevNames) => [...prevNames, temp]);
-        }
+      setAddDataLayerController(!addDataLayerController);
+      if (geodata) {
+        const temp = { name: layer, data: geodata };
+        setAllGeodata((prevNames) => [...prevNames, temp]);
       }
+      setCurrentLayerName(layer);
+
     }
   };
 
@@ -367,37 +326,7 @@ const SatelitteMap = (context: any) => {
   const [mCurrentLayer, setMCurrentLayer] = useState<string>(); // current Layer in Data Setting Panel, we will use this to remove layers.
 
 
-  //----------------------******************** Marker Image Control **********************-------------------\\
 
-  const [selectedLayerImageFile, setSelectedLayerImageFile] = useState<string | null>(null);
-  const [layerImageFiles, setLayerImageFiles] = useState<any[]>([]);
-
-  const [selectedMarkerImageFile, setSelectedMarkerImageFile] = useState<string | null>(null);
-  const [markerImageFiles, setMarkerImageFiles] = useState<any[]>([]);
-  const [currentMarkerImage, setCurrentMarkerImage] = useState<any>();
-
-  const handleLayerImageFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const fileList = event.target.files;
-    if (fileList && fileList.length > 0) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setSelectedLayerImageFile(reader.result as string);
-      };
-      reader.readAsDataURL(fileList[0]);
-    }
-  };
-  const handleMarkerImageFileChange = (
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
-    const fileList = event.target.files;
-    if (fileList && fileList.length > 0) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setSelectedMarkerImageFile(reader.result as string);
-      };
-      reader.readAsDataURL(fileList[0]);
-    }
-  };
 
 
   //--------**************   Person search engine  ***************-----------//
@@ -631,10 +560,6 @@ const SatelitteMap = (context: any) => {
 
   useEffect(() => {
     if (currentLayerName) {
-      markerImageFiles.map((data, index) => {
-        if (data.layername === currentLayerName)
-          setCurrentMarkerImage(data.data);
-      });
 
       const gjson = JSON.stringify(allGeodata, null, 2);
       const ljson = JSON.stringify(dataLayers, null, 2);
@@ -642,25 +567,7 @@ const SatelitteMap = (context: any) => {
       blobg = new Blob([gjson], { type: "application/json" });
       blobl = new Blob([ljson], { type: "application/json" });
 
-      allGeodata.map((data, index) => {
-        if (data.name === currentLayerName) {
-          const cheader = Object.keys(data.data.features[0].properties);
-          setCurrentLayerDataHeader(cheader);
-          setCurrentLayerData([]);
-          // setCurrentLayerData(geoJsonFeatureToTableRows(data.data.features));
-          const array = data.data.features.map((i: any, index: number) => {
-            const values = i.properties;
-            const obj = cheader.reduce((object: any, header, index) => {
-              object[header] = values[header];
-              return object;
-            }, {});
-
-            setCurrentLayerData((prevNames) => [...prevNames, obj]);
-          });
-          setLoading(false);
-        }
-      });
-
+      setLoading(false);
     }
   }, [currentLayerName]);
 
@@ -673,13 +580,11 @@ const SatelitteMap = (context: any) => {
     loadWorkSpace();
     return () => {
       blobg = "";
-      blobt = "";
       blobl = "";
     };
   }, []);
 
   const saveWorkspace = async () => {
-    // if (blobg != "" && blobl != "" && blobt != "") {
     setLoading(true);
     setLoadingText("Saving Workspace");
 
@@ -704,7 +609,6 @@ const SatelitteMap = (context: any) => {
     console.log("BLOB");
     blobg = "";
     blobl = "";
-    // }
   };
   async function loadWorkSpace() {
     // const docRef = doc(db, "data", userId);
@@ -715,18 +619,26 @@ const SatelitteMap = (context: any) => {
 
     const geoRef = ref(storage, `${userId}/geo.json`);
     const layerRef = ref(storage, `${userId}/layer.json`);
+    
 
     if (geoRef && layerRef) {
-      await getDownloadURL(geoRef)
+      // Check if geo.json exists
+      getDownloadURL(geoRef)
         .then((url) => {
           fetch(url)
-            .then((response) => response.json())
+            .then((response) => {
+              if (response.ok) {
+                return response.json();
+              } else {
+                throw new Error("Geo JSON file not found");
+              }
+            })
             .then((jsonData) => {
               setAllGeodata(jsonData);
-              setInitFlag(!initFlag);
+              setInitialLoadingFlag(!initialLoadingFlag);
             })
             .catch((error) => {
-              console.error("Error retrieving JSON data", error);
+              console.error("Error retrieving Geo JSON data", error);
             });
         })
         .catch((error) => {
@@ -734,13 +646,19 @@ const SatelitteMap = (context: any) => {
           // Handle any errors
         });
 
-
-      await getDownloadURL(layerRef)
+      // Check if layer.json exists
+      getDownloadURL(layerRef)
         .then((url) => {
           fetch(url)
-            .then((response) => response.json())
+            .then((response) => {
+              if (response.ok) {
+                return response.json();
+              } else {
+                throw new Error("Layer JSON file not found");
+              }
+            })
             .then((jsonData) => {
-              const updatedArray = jsonData.map((obj: any) => ({
+              const updatedArray = jsonData.map((obj:any) => ({
                 layerName: obj,
                 visible: true,
               }));
@@ -750,7 +668,7 @@ const SatelitteMap = (context: any) => {
               setCurrentLayerName(jsonData[0]);
             })
             .catch((error) => {
-              console.error("Error retrieving JSON data", error);
+              console.error("Error retrieving Layer JSON data", error);
             });
         })
         .catch((error) => {
@@ -763,55 +681,19 @@ const SatelitteMap = (context: any) => {
   }
 
 
-  //---------------------*************** CRUD a point of current layer data from map. ****************-------------------\\
 
-  const addCurrentLayerData = (aData: any) => {
-    const feature = {
-      type: "Feature",
-      geometry: aData.geometry,
-      properties: aData.properties,
-    };
-    let temp = currentLayerData;
-    console.log("0-", temp);
-    temp.push(aData.properties);
-    setCurrentLayerData(temp);
-
-  };
-
-  const updateCurrentLayerData = (uData: any) => {
-    // setCurrentMarkerData(uData);
-
-    let temp = currentLayerData;
-
-    temp[uData.id] = uData.data;
-    console.log("1-", temp);
-    setCurrentLayerData(temp);
-
-  };
-
-  const deleteCurrentLayerData = (index: number) => {
-    let temp = currentLayerData;
-    temp.splice(index, 1);
-    setCurrentLayerData(temp);
-
-  };
 
   //--------------------****************** Connect UI to Map *******************----------------------------\\
   const myMap = useMap(
     mapRef,
     addDataLayerController,
-    initFlag,
-    addCurrentLayerData,
-    updateCurrentLayerData,
-    deleteCurrentLayerData,
+    initialLoadingFlag,
     geoStyleName,
     layer,
     currentLayerName,
     geodata,
     allGeodata,
     drawMode,
-    selectedMarkerImageFile,
-    currentMarkerImage,
     dataLayersVisible
   );
 
@@ -1143,19 +1025,6 @@ const SatelitteMap = (context: any) => {
                     color: "white",
                   }}
                 >
-                  <ListItemAvatar>
-                    {selectedLayerImageFile && (
-                      <Avatar
-                        style={{
-                          width: "100%",
-                          height: "120px",
-                          borderRadius: "10px",
-                        }}
-                        alt="Remy Sharp"
-                        src={layerImageFiles[index]}
-                      />
-                    )}
-                  </ListItemAvatar>
                   <ListItemText
                     style={{ marginLeft: "15px" }}
                     primary={data}
@@ -1924,7 +1793,7 @@ const SatelitteMap = (context: any) => {
                     style={{ width: "100%", borderColor: "white" }}
                   />
                 </div>
-           
+
               </div>
             </div>
           </div>
