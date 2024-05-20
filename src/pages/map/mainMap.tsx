@@ -273,6 +273,7 @@ const SatelitteMap = (context: any) => {
       setAlertColor("black");
       setAlertContent("You need to import data or create.");
     } else {
+      
       setLoading(true);
       setLoadingText("Loading CSV Data");
 
@@ -288,7 +289,8 @@ const SatelitteMap = (context: any) => {
         const temp = { name: layer, data: geodata };
         setAllGeodata((prevNames) => [...prevNames, temp]);
       }
-      setCurrentLayerName(layer);
+      setLoading(false);
+      // setCurrentLayerName(layer);
 
     }
   };
@@ -552,24 +554,6 @@ const SatelitteMap = (context: any) => {
     setBtwitter(data.twitter_url as string);
     setCrunchbase(data.profiles?.at(4) as string);
   };
-
-
-
-
-  //-----------------************ Update blog data to store layers & geoData in firebase  and then set current layer data **************-------------------\\
-
-  useEffect(() => {
-    if (currentLayerName) {
-
-      const gjson = JSON.stringify(allGeodata, null, 2);
-      const ljson = JSON.stringify(dataLayers, null, 2);
-
-      blobg = new Blob([gjson], { type: "application/json" });
-      blobl = new Blob([ljson], { type: "application/json" });
-
-      setLoading(false);
-    }
-  }, [currentLayerName]);
 
 
 

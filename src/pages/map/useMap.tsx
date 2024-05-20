@@ -9,8 +9,6 @@ import {
 import ReactDOM from "react-dom";
 import { LngLat, Map, Marker } from "mapbox-gl";
 import { initMap } from "./initMap";
-import { generateOneMarker } from "./createOneMarker";
-import mapboxgl from "mapbox-gl";
 import Geocoder from "./utils/Geocoder";
 // import drawGeoFence from './drawGeoFence';
 import drawGeoFence from "./utils/drawGeoFence";
@@ -113,23 +111,23 @@ export const useMap = (
 
   useEffect(() => {
     if (geodata) {
-      console.log("4");
+      console.log("hihi")
       setCurrentLayerGeoData(geodata);
       mapInitRef.current?.flyTo({
         center: geodata.features[0].geometry.coordinates,
         zoom: 5,
       });
 
-      mapInitRef.current?.addSource(currentLayerName, {
+      mapInitRef.current?.addSource(layerName, {
         type: "geojson",
         data: geodata,
       });
       // Add a symbol layer
 
       mapInitRef.current?.addLayer({
-        id: currentLayerName,
+        id: layerName,
         type: "circle",
-        source: currentLayerName,
+        source: layerName,
         paint: {
           "circle-radius": 5,
           "circle-stroke-width": 2,
@@ -142,7 +140,7 @@ export const useMap = (
       });
 
       if (
-        layerVisible.find((obj) => obj.layerName === currentLayerName).visible
+        layerVisible.find((obj) => obj.layerName === layerName).visible
       ) {
         mapInitRef.current?.setLayoutProperty(
           layerName,
@@ -151,7 +149,7 @@ export const useMap = (
         );
       } else
         mapInitRef.current?.setLayoutProperty(
-          currentLayerName,
+          layerName,
           "visibility",
           "none"
         );
@@ -179,7 +177,7 @@ export const useMap = (
 
   useEffect(() => {
     if (allGeodata.length != 0) {
-      // console.log("1")
+     
       setCurrentLayerGeoData(allGeodata[0].data);
       allGeodata.map((data: any, index: any) => {
         mapInitRef.current?.flyTo({
@@ -211,9 +209,9 @@ export const useMap = (
 
   useEffect(() => {
     if (currentLayerName && container.current) {
+      console.log('haha')
       allGeodata.map((data: any, index: any) => {
         if (data.name === currentLayerName) {
-          // console.log(data.data)
           setCurrentLayerGeoData(data.data);
           mapInitRef.current!.flyTo({
             center: data.data.features[0].geometry.coordinates,
@@ -225,8 +223,8 @@ export const useMap = (
   }, [currentLayerName]);
 
   useEffect(() => {
-    if (currentLayerGeoData && currentLayerName) {
-      mapInitRef.current?.on("click", currentLayerName, (e: any) => {
+    if (currentLayerGeoData && (currentLayerName || layerName)) {
+      mapInitRef.current?.on("click", currentLayerName || layerName, (e: any) => {
         if (mapInitRef.current)
           mapInitRef.current.getCanvas().style.cursor = "pointer";
 
