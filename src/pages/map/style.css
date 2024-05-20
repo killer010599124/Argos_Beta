@@ -1,0 +1,454 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto');
+@import url('https://netdna.bootstrapcdn.com/font-awesome/4.0.1/css/font-awesome.css');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+.css-k008qs {
+  overflow-y: hidden;
+}
+
+.toolButton {
+  width: 50px;
+  height: 50px;
+  border-radius: 25px;
+  background: black;
+  border-color: white;
+  color: white;
+  /* border-width: 3px; */
+  margin-top: 20px;
+}
+
+.css-heg063-MuiTabs-flexContainer {
+  display: flex;
+  justify-content: space-around;
+}
+
+body {
+  font: 14px/1 'Roboto', sans-serif;
+  color: #fff;
+
+  -webkit-font-smoothing: antialiased;
+
+}
+
+.drawTab {
+  padding: 20px;
+  /* height: 150px; */
+  color: white;
+
+}
+
+.mapboxgl-ctrl-group {
+  position: absolute;
+  right: 0;
+  background: black !important;
+  margin-right: 227% !important;
+  margin-top: 230px !important;
+  opacity: 0.75;
+  display: none;
+  border-radius: 4px;
+  /* display: none; */
+}
+
+.mapbox-gl-draw_ctrl-draw-btn button {
+  height: 40px;
+  width: 40px;
+}
+
+.geoStyleBtn {
+  background: black;
+  border-color: white;
+  width: 75px;
+  height: 25px;
+  padding: 0px;
+  border-radius: 20px;
+  border-width: 1px;
+  /* padding-right: 10px; */
+  color: white;
+}
+
+.saveBtn {
+  background: black;
+  border-color: white;
+  width: 200px;
+  height: 30px;
+  padding: 0px;
+  border-radius: 20px;
+  border-width: 1px;
+  /* padding-right: 10px; */
+  color: white;
+}
+
+input,
+
+textarea {
+  font-family: inherit;
+  font-size: 100%;
+  vertical-align: baseline;
+  border: 0;
+  outline: 0;
+  color: #fff;
+}
+
+
+input::-moz-focus-inner {
+  border: 0;
+  padding: 0;
+}
+
+textarea {
+  overflow: auto;
+  vertical-align: top;
+  resize: none;
+}
+
+[placeholder]::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, .8);
+}
+
+[placeholder]:hover::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, .4);
+}
+
+[placeholder]:focus::-webkit-input-placeholder {
+  color: transparent;
+}
+
+[placeholder]::-moz-placeholder {
+  color: rgba(255, 255, 255, .8);
+}
+
+[placeholder]:hover::-moz-placeholder {
+  color: rgba(255, 255, 255, .4);
+}
+
+[placeholder]:focus::-moz-placeholder {
+  color: transparent;
+}
+
+[placeholder]:-ms-input-placeholder {
+  color: rgba(255, 255, 255, .8);
+}
+
+[placeholder]:hover:-ms-input-placeholder {
+  color: rgba(255, 255, 255, .4);
+}
+
+[placeholder]:focus:-ms-input-placeholder {
+  color: transparent;
+}
+
+form {
+  width: 400px;
+  margin: 50px auto;
+  background: "#233044";
+}
+
+.searchBox {
+  text-align: -webkit-center;
+}
+
+.csv {
+  border-radius: 10px;
+  /* display: block; */
+  line-height: 23px;
+  width: 40%;
+  margin: 0 0 10px;
+  padding: 4px 0 4px 0;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 1);
+  background: rgba(0, 0, 0, .75);
+  color: white;
+
+}
+.csv:hover{
+  background-color: darkgrey;
+}
+
+.mapboxgl-ctrl-geocoder--icon {
+  display: none;
+}
+
+.mapboxgl-ctrl-geocoder--pin-right {
+  display: none;
+}
+
+.mapboxgl-ctrl-geocoder--powered-by {
+  display: none !important;
+}
+
+input[type="text"] {
+  display: block;
+  width: 160px;
+  margin: 0 0 10px;
+  padding: 4px 12px 4px 12px;
+  border: 1px solid rgba(0, 0, 0, .5);
+  background: rgba(0, 0, 0, .75);
+  border-radius: 10px;
+}
+
+.suggestions {
+  background: black;
+  color: white;
+  font-size: 16px;
+  opacity: 0.75;
+  width: 150%;
+  padding-left: 20px;
+  margin-top: -5px;
+  border-radius: 5px;
+}
+
+.mapboxgl-ctrl-geocoder--suggestion {
+  padding-top: 5px;
+}
+
+ul {
+  list-style-type: none;
+}
+
+/* background: black;
+    color: white;
+    padding: 15px;
+    font-size: 14px;
+    width: 150%;
+    opacity: 0.75; */
+.geocoder-dropdown-item {
+  padding: 5px;
+}
+
+.geocoder-dropdown-icon {
+  margin-right: 5px;
+  background: white;
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+}
+
+.geocoder-dropdown-text {
+  color: white;
+  /* background-color: black; */
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: larger;
+}
+
+.mapboxgl-ctrl-geocoder {
+  width: 300px !important;
+  /* background-color: black !important; */
+  width: 100%;
+}
+
+.mapboxgl-ctrl-top-right {
+  margin-left: 50%;
+  right: auto !important;
+  margin-top: 5%;
+  transform: translateX(-75%);
+}
+
+.mapboxgl-ctrl-geocoder--input {
+  margin-top: -25px !important;
+  font-size: 16px;
+  width: 150% !important;
+  padding: 5px 40px 6px 35px !important;
+  height: 40px;
+  border-width: 3px !important;
+  border-color: white !important;
+  border-radius: 25px !important;
+}
+
+input[type='file'] {
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+input[type="number"] {
+  display: block;
+  width: 160px;
+  margin: 0 0 10px;
+  padding: 4px 12px 4px 12px;
+  border: 1px solid rgba(0, 0, 0, .5);
+  background: rgba(0, 0, 0, .75);
+  border-radius: 10px;
+}
+
+input[type="date"] {
+  display: block;
+  width: 160px;
+  margin: 0 0 10px;
+  padding: 4px 12px 4px 12px;
+  border: 1px solid rgba(0, 0, 0, .5);
+  background: rgba(0, 0, 0, .75);
+  border-radius: 10px;
+}
+
+textarea {
+  display: block;
+  width: 345px;
+  height: 100px;
+
+  margin: auto;
+  padding: 8px 12px 10px 12px;
+  border: 1px solid rgba(0, 0, 0, .5);
+  background: rgba(0, 0, 0, .75);
+  border-radius: 10px;
+}
+
+.radio {
+  position: relative;
+  display: inline-block;
+  margin: 0 20px 20px 0;
+}
+
+.radio input[type="radio"] {
+  vertical-align: middle;
+  opacity: 0;
+}
+
+.radio label {
+  vertical-align: middle;
+  cursor: pointer;
+}
+
+.radio input[type="radio"]+label:before {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin: -3px 5px 0 -15px;
+  vertical-align: middle;
+  font-size: 12px;
+  font-family: fontawesome;
+  line-height: 19px;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, .5);
+  background: rgba(0, 0, 0, .25);
+}
+
+.radio input[type="radio"]+label:before {
+  border-radius: 50%;
+}
+
+.radio input[type="radio"]:hover+label:before {
+  content: '\f111';
+  font-size: 9px;
+  color: rgba(255, 255, 255, .4);
+}
+
+.radio input[type="radio"]:checked+label:before {
+  content: '\f111';
+  font-size: 9px;
+  color: rgba(255, 255, 255, .8);
+}
+
+.radio .sex {
+  font: 20px fontawesome;
+}
+
+input[type="button"]:hover {
+
+  background-color: rgb(46, 44, 44);
+}
+
+input[type="button"] {
+  border-radius: 10px;
+  display: block;
+  width: 100px;
+  margin: 0 0 10px;
+  padding: 4px 0 4px 0;
+  text-align: center;
+  border: 1px solid white;
+  background: rgba(0, 0, 0, .75);
+}
+
+.large-2 {
+  float: left;
+  height: 300px;
+  overflow-y: scroll;
+  margin-bottom: 25px;
+  width: 100px;
+}
+
+.force-overflow {
+  min-height: 450px;
+}
+
+.large-2::-webkit-scrollbar-track {
+  border: 1px solid #000;
+  padding: 2px 0;
+  background-color: black;
+}
+
+.large-2::-webkit-scrollbar {
+  width: 0px;
+}
+
+.large-2::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
+  background-color: #737272;
+  border: 1px solid #000;
+}
+
+ul li a {
+  display: block;
+}
+
+ul li:hover {
+  background: slategray;
+  color: white;
+}
+
+.list-item {
+  cursor: pointer;
+}
+
+.list-item.active {
+  background-color: steelblue;
+}
+.markerTable.active{
+  background-color: steelblue;
+}
+tbody tr:hover {
+  background: slategray;
+  color: white;
+}
+.mapboxgl-popup-content {
+  background: transparent !important;
+  box-shadow: 0px 0px 0px 0px !important;
+}
+
+.mapboxgl-popup {
+  max-width: 500px !important;
+}
+
+.mapboxgl-popup-tip {
+  border-right-color: black !important;
+}
+
+button {
+  background: black;
+  color: white;
+  border: 0.01em solid white;
+  width: 25%;
+  padding: 2px;
+  border-radius: 10px;
+}
+.marker {
+ 
+  background-image: url('../../../public/logo.png');
+  background-size: cover;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  }
