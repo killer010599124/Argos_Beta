@@ -14,8 +14,7 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import Avatar from "@mui/material/Avatar";
 import Draggable, { DraggableData, DraggableEvent } from "react-draggable";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-
+import { FaEye, FaEyeSlash, FaFile } from "react-icons/fa";
 import {
   getStorage,
   ref,
@@ -204,38 +203,26 @@ const SatelitteMap = (context: any) => {
   const csv2geojson = require("csv2geojson");
   const readFile = require("./utils/readCsvFile");
 
+  const saveJsonFile = (data: any, filename: any) => {
+    const jsonData = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
 
-  const readCSVFile = (e: any) => {
-    const file = e.target.files[0];
-    setLoading(true);
-    setLoadingText("Loading CSV Data");
-    readFile.readAsText(file, (err: any, text: any) => {
-      csv2geojson.csv2geojson(
-        text,
-        {
-          delimiter: "auto",
-        },
-        (err: any, result: any) => {
-          if (err) {
-            setLoading(false);
-          } else {
-            setGeodata([]);
-            setGeodata(result);
-            setLoading(false);
-          }
-        }
-      );
-    });
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   };
+
+
 
 
   //------------------  **************  Data Manager   ************** ---------------\\
 
   const [geodata, setGeodata] = useState<any>(); // Geodata when we input
-
   const [allGeodata, setAllGeodata] = useState<any[]>([]); // All geoData json on the map.
-
-
+  const [currentGeoData, setCurrentGeoData] = useState<any>()
   const [initialLoadingFlag, setInitialLoadingFlag] = useState(false); // When open page,,, load data. send signal from UI to map controller
 
 
@@ -252,7 +239,58 @@ const SatelitteMap = (context: any) => {
   const [layer, setLayer] = useState(""); //  layer name when we import from Data setting Panel.
   const [currentLayerName, setCurrentLayerName] = useState(""); // layer name that be selected currently
   const [dataLayers, setDataLayers] = useState<string[]>([]);  // All existing Layers name in workspace
+  const [customDataLayers, setCustomDataLayers] = useState<string[]>([])
+  const [defaultDataLayers, setDefaultDataLayers] = useState<string[]>([])
   const [dataLayersVisible, setDataLayersVisible] = useState<any[]>([]); // Set visibility of all layers on the map
+
+
+
+  const readCSVFile = (e: any) => {
+    const checkStringExistence = (array: string[], value: string): boolean => {
+      return array.includes(value);
+    };
+    const isStringExists = checkStringExistence(customDataLayers, layer);
+
+    if (layer === "") {
+      setAlertVisible(true);
+      setAlertColor("black");
+      setAlertContent("You should enter a layer name ");
+
+    } else if (isStringExists) {
+      setAlertVisible(true);
+      setAlertColor("black");
+      setAlertContent("Layer name is already exist. Enter a other name");
+    } else {
+      const file = e.target.files[0];
+      console.log(file.name)
+      setLoading(true);
+      setLoadingText("Loading CSV Data");
+      readFile.readAsText(file, (err: any, text: any) => {
+        csv2geojson.csv2geojson(
+          text,
+          {
+            delimiter: "auto",
+          },
+          (err: any, result: any) => {
+            if (err) {
+              setLoading(false);
+            } else {
+              setCurrentGeoData([]);
+              setCurrentGeoData(result);
+
+              const temp = { name: layer, data: result };
+              setAllGeodata((prevNames) => [...prevNames, temp]);
+
+              setCustomDataLayers((layers) => [...layers, layer]);
+              setMCustomCurrentLayer(layer)
+              setLoading(false);
+            }
+          }
+        );
+      });
+    }
+
+  };
 
   const addDataLayer = () => {
     const checkStringExistence = (array: string[], value: string): boolean => {
@@ -273,7 +311,7 @@ const SatelitteMap = (context: any) => {
       setAlertColor("black");
       setAlertContent("You need to import data or create.");
     } else {
-      
+
       setLoading(true);
       setLoadingText("Loading CSV Data");
 
@@ -291,14 +329,23 @@ const SatelitteMap = (context: any) => {
       }
       setLoading(false);
       // setCurrentLayerName(layer);
-
     }
   };
 
+  const addWorkSpace_Custom = () => {
+
+    setDataLayers((layers) => [...layers, mCustomCurrentLayer as any]);
+    setDataLayersVisible((layers) => [
+      ...layers,
+      { layerName: mCustomCurrentLayer, visible: true },
+    ]);
+    setAddDataLayerController(!addDataLayerController);
+  }
+
   function removeDataLayer() {
-    console.log(mCurrentLayer);
-    if (mCurrentLayer) {
-      const indexToRemove = dataLayers.indexOf(mCurrentLayer);
+    console.log(mCustomCurrentLayer);
+    if (mCustomCurrentLayer) {
+      const indexToRemove = dataLayers.indexOf(mCustomCurrentLayer);
       const updatedArray = [
         ...dataLayers.slice(0, indexToRemove),
         ...dataLayers.slice(indexToRemove + 1),
@@ -311,7 +358,7 @@ const SatelitteMap = (context: any) => {
       ];
       setDataLayersVisible(updatedArrayVisible);
 
-      const updatedGeo = allGeodata.filter((obj) => obj.name !== mCurrentLayer);
+      const updatedGeo = allGeodata.filter((obj) => obj.name !== mCustomCurrentLayer);
       setAllGeodata(updatedGeo);
 
 
@@ -323,9 +370,11 @@ const SatelitteMap = (context: any) => {
     }
   }
 
-  //------------------**************** Manual Data Import Setting ******************--------------------\\
+  //------------------****************  Data Import Setting ******************--------------------\\
 
-  const [mCurrentLayer, setMCurrentLayer] = useState<string>(); // current Layer in Data Setting Panel, we will use this to remove layers.
+  const [mCurrentLayer, setMCurrentLayer] = useState<string>(); // current workspace Layer in Data Setting Panel,
+  const [mCustomCurrentLayer, setMCustomCurrentLayer] = useState<string>(); // current Custom Layer in Data Setting Panel,
+  const [mDefaultCurrentLayer, setMDefaultCustomCurrentLayer] = useState<string>(); // current Default Layer in Data Setting Panel,
 
 
 
@@ -603,7 +652,7 @@ const SatelitteMap = (context: any) => {
 
     const geoRef = ref(storage, `${userId}/geo.json`);
     const layerRef = ref(storage, `${userId}/layer.json`);
-    
+
 
     if (geoRef && layerRef) {
       // Check if geo.json exists
@@ -642,7 +691,7 @@ const SatelitteMap = (context: any) => {
               }
             })
             .then((jsonData) => {
-              const updatedArray = jsonData.map((obj:any) => ({
+              const updatedArray = jsonData.map((obj: any) => ({
                 layerName: obj,
                 visible: true,
               }));
@@ -675,7 +724,7 @@ const SatelitteMap = (context: any) => {
     geoStyleName,
     layer,
     currentLayerName,
-    geodata,
+    currentGeoData,
     allGeodata,
     drawMode,
     dataLayersVisible
@@ -956,7 +1005,7 @@ const SatelitteMap = (context: any) => {
           width: '400px',
           height: "100%",
           opacity: 0.75,
-          background: "lightslategrey",
+          background: "black",
           transition: "height 0.5s ease",
         }}
       >
@@ -991,7 +1040,7 @@ const SatelitteMap = (context: any) => {
               bgcolor: "background.paper",
             }}
             style={{
-              background: "lightslategrey",
+              background: "black",
               padding: "7%",
               maxWidth: "100%",
             }}
@@ -1617,6 +1666,7 @@ const SatelitteMap = (context: any) => {
                 right: "25%",
                 marginTop: "7%",
                 zIndex: "2",
+                justifyContent: 'space-evenly',
                 width: "50%",
                 height: "650px",
                 display: "flex",
@@ -1633,7 +1683,6 @@ const SatelitteMap = (context: any) => {
               height: "100%",
               borderTopLeftRadius: "10px",
               borderBottomLeftRadius: "10px",
-              borderRight: "0.1rem solid white",
             }}
           >
             <div className="PBData" style={{ color: "white", height: "100%" }}>
@@ -1648,7 +1697,7 @@ const SatelitteMap = (context: any) => {
                     paddingTop: "10px",
                   }}
                 >
-                  Layers
+                  Default Layers
                 </div>
                 <div className="drawTab">
                   <div
@@ -1659,7 +1708,181 @@ const SatelitteMap = (context: any) => {
                       borderRadius: "10px",
                     }}
                   >
-                    <ul style={{ width: "100%", height: "100%" }}>
+                    <ul style={{ width: "100%", height: "100%", paddingLeft: '5px', paddingRight: "5px" }}>
+                      {defaultDataLayers.map((data, index) => {
+                        return (
+                          <li
+                            style={{ padding: "10px", borderRadius: "10px" }}
+                            onClick={() => setMDefaultCustomCurrentLayer(data)}
+                            className={`list-item ${mDefaultCurrentLayer == data && "active"
+                              }`}
+                          >
+                            {data}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: "space-evenly",
+                      paddingTop: "5px",
+                      zIndex: "1",
+                      marginTop: "15px",
+                      bottom: "0",
+                    }}
+                  >
+                    <label
+                      className="csv"
+                      onClick={() => {
+                        addDataLayer();
+                      }}
+                    >
+                      Add WorkSpace
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              width: "30%",
+              height: "100%",
+              borderTopLeftRadius: "10px",
+              borderBottomLeftRadius: "10px",
+            }}
+          >
+            <div className="PBData" style={{ color: "white", height: "100%" }}>
+              <div>
+                <div
+                  style={{
+                    fontSize: "24px",
+                    lineHeight: "45px",
+                    width: "100%",
+                    height: "50px",
+                    textAlign: "center",
+                    paddingTop: "10px",
+                  }}
+                >
+                  Custom Layers
+                </div>
+                <div className="drawTab">
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "450px",
+                      border: "0.1rem solid white",
+                      borderRadius: "10px",
+                    }}
+                  >
+                    <ul style={{ width: "100%", height: "100%", paddingLeft: '5px', paddingRight: "5px" }}>
+                      {customDataLayers.map((data, index) => {
+                        return (
+                          <li
+                            style={{ padding: "10px", borderRadius: "10px" }}
+                            onClick={() => {
+                              setMCustomCurrentLayer(data);
+                              const specificGeodata = allGeodata.filter((item) => item.name === data);
+                              console.log(specificGeodata)
+                              setCurrentGeoData(specificGeodata[0].data)
+                            }}
+                            className={`list-item ${mCustomCurrentLayer == data && "active"
+                              }`}
+                          >
+                            {data}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      marginTop: "20px",
+                      width: "100%",
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Enter a layer name"
+                      value={layer}
+                      onChange={(e) => {
+                        setLayer(e.target.value);
+                      }}
+                      style={{ width: "85%", borderColor: "white", }}
+                    />
+                    <label className="csv" style={{ width: '15%', marginLeft: '5px' }}>
+                      <input
+                        id="Image"
+                        type="file"
+                        onChange={readCSVFile}
+                      />
+                      <FaFile />
+                    </label>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: "space-evenly",
+                      paddingTop: "5px",
+                      zIndex: "1",
+                      marginTop: "5px",
+                      bottom: "0",
+                    }}
+                  >
+                    <label
+                      className="csv"
+                      onClick={() => {
+                        addWorkSpace_Custom();
+                      }}
+                    >
+                      Add WorkSpace
+                    </label>
+
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              width: "30%",
+              height: "100%",
+              borderTopLeftRadius: "10px",
+              borderBottomLeftRadius: "10px",
+            }}
+          >
+            <div className="PBData" style={{ color: "white", height: "100%" }}>
+              <div>
+                <div
+                  style={{
+                    fontSize: "24px",
+                    lineHeight: "45px",
+                    width: "100%",
+                    height: "50px",
+                    textAlign: "center",
+                    paddingTop: "10px",
+                  }}
+                >
+                  WorkSpace Layers
+                </div>
+                <div className="drawTab">
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "450px",
+                      border: "0.1rem solid white",
+                      borderRadius: "10px",
+                    }}
+                  >
+                    <ul style={{ width: "100%", height: "100%", paddingLeft: '5px', paddingRight: "5px" }}>
                       {dataLayers.map((data, index) => {
                         return (
                           <li
@@ -1676,27 +1899,15 @@ const SatelitteMap = (context: any) => {
                   </div>
                   <div
                     style={{
-                      // display: "block",
-                      position: "absolute",
                       display: "flex",
                       flexDirection: "row",
                       justifyContent: "space-evenly",
                       paddingTop: "5px",
                       zIndex: "1",
-                      width: "25%",
-                      marginBottom: "4%",
+                      marginTop: "15px",
                       bottom: "0",
-                      // overflowY: 'scroll'
                     }}
                   >
-                    <label
-                      className="csv"
-                      onClick={() => {
-                        addDataLayer();
-                      }}
-                    >
-                      Add
-                    </label>
                     <label
                       className="csv"
                       onClick={() => {
@@ -1705,82 +1916,12 @@ const SatelitteMap = (context: any) => {
                     >
                       Remove
                     </label>
-                    {/* <label className='csv' onClick={() => {
-
-                }}>
-                  Remove layer
-                </label> */}
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div
-            style={{
-              width: "70%",
-              height: "100%",
-              borderTopRightRadius: "10px",
-              borderBottomRightRadius: "10px",
-            }}
-          >
-            <div className="PBData" style={{ color: "white", height: "100%" }}>
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "20px",
-                    lineHeight: "45px",
-                    width: "100%",
-                    height: "50px",
-                    textAlign: "center",
-                    paddingTop: "10px",
-                  }}
-                >
-                  Options
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-evenly",
-                  }}
-                >
-                  <label className="csv">
-                    <input
-                      id="Image"
-                      type="file"
-                      onChange={readCSVFile}
-                    />
-                    From CSV
-                  </label>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    marginTop: "20px",
-                    width: "90%",
-                    transform: "translateX(5%)",
-                  }}
-                >
-                  <input
-                    type="text"
-                    placeholder="Enter a layer name"
-                    value={layer}
-                    onChange={(e) => {
-                      setLayer(e.target.value);
-                    }}
-                    style={{ width: "100%", borderColor: "white" }}
-                  />
-                </div>
 
-              </div>
-            </div>
-          </div>
         </div>
       </Draggable>
 

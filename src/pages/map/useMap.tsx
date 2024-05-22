@@ -1,13 +1,9 @@
 import {
   useEffect,
-  useCallback,
-  forwardRef,
-  useImperativeHandle,
   useRef,
   useState,
 } from "react";
-import ReactDOM from "react-dom";
-import { LngLat, Map, Marker } from "mapbox-gl";
+import { Map } from "mapbox-gl";
 import { initMap } from "./initMap";
 import Geocoder from "./utils/Geocoder";
 // import drawGeoFence from './drawGeoFence';
@@ -15,6 +11,8 @@ import drawGeoFence from "./utils/drawGeoFence";
 import drawCircle from "./utils/drawCircle";
 import drawRect from "./utils/drawRect";
 import { Popup } from "mapbox-gl";
+import * as turf from '@turf/turf';
+// Rest of your code
 export const useMap = (
   container: React.RefObject<HTMLDivElement>,
   addDataLayerController: boolean,
@@ -22,7 +20,7 @@ export const useMap = (
   geoStyleName: string,
   layerName: string,
   currentLayerName: string,
-  geodata: any,
+  currentGeoData: any,
   allGeodata: any,
   drawMode: string,
   layerVisible: any[]
@@ -110,17 +108,18 @@ export const useMap = (
   }, [drawMode]);
 
   useEffect(() => {
-    if (geodata) {
-      console.log("hihi")
-      setCurrentLayerGeoData(geodata);
+    if (currentGeoData) {
+      setCurrentLayerGeoData(currentGeoData);
       mapInitRef.current?.flyTo({
-        center: geodata.features[0].geometry.coordinates,
+        center: currentGeoData.features[0].geometry.coordinates,
         zoom: 5,
       });
-
       mapInitRef.current?.addSource(layerName, {
         type: "geojson",
-        data: geodata,
+        data: currentGeoData,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 30
       });
       // Add a symbol layer
 
@@ -128,15 +127,76 @@ export const useMap = (
         id: layerName,
         type: "circle",
         source: layerName,
+        filter: ['has', 'point_count'],
+
         paint: {
-          "circle-radius": 5,
-          "circle-stroke-width": 2,
-          "circle-color": "red",
-          "circle-stroke-color": "white",
+          'circle-color': [
+            'step',
+            ['get', 'point_count'],
+            '#51bbd6',
+            100,
+            '#f1f075',
+            750,
+            '#f28cb1'
+          ],
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            20,
+            100,
+            30,
+            750,
+            40
+          ]
         },
         layout: {
           visibility: "visible",
         },
+      });
+      mapInitRef.current?.addLayer({
+        id: 'cluster-count' + layerName,
+        type: 'symbol',
+        source: layerName,
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': ['get', 'point_count_abbreviated'],
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 12
+        }
+      });
+      mapInitRef.current?.addLayer({
+        id: 'unclustered' + layerName,
+        type: 'circle',
+        source: layerName,
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': '#11b4da',
+          'circle-radius': 4,
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#fff'
+        }
+      });
+      mapInitRef.current?.on('click', layerName, (e) => {
+        const features = mapInitRef.current?.queryRenderedFeatures(e.point, {
+          layers: [layerName]
+        });
+        const clusterId = features?.[0].properties?.cluster_id;
+        const source: mapboxgl.GeoJSONSource = mapInitRef.current?.getSource(layerName) as mapboxgl.GeoJSONSource
+
+
+        source.getClusterExpansionZoom(
+          clusterId,
+          (err: any, zoom: any) => {
+            if (err) return;
+            if (features?.[0].geometry.type === 'Point') {
+              mapInitRef.current?.easeTo({
+                center: [features?.[0].geometry.coordinates[0], features?.[0].geometry.coordinates[1]],
+                zoom: zoom
+              });
+            }
+
+          }
+        );
       });
 
       if (
@@ -177,7 +237,7 @@ export const useMap = (
 
   useEffect(() => {
     if (allGeodata.length != 0) {
-     
+
       setCurrentLayerGeoData(allGeodata[0].data);
       allGeodata.map((data: any, index: any) => {
         mapInitRef.current?.flyTo({
@@ -187,6 +247,9 @@ export const useMap = (
         mapInitRef.current?.addSource(data.name, {
           type: "geojson",
           data: data.data,
+          cluster: true,
+          clusterMaxZoom: 50,
+          clusterRadius: 30
         });
         // Add a symbol layer
         mapInitRef.current?.addLayer({
@@ -224,7 +287,7 @@ export const useMap = (
 
   useEffect(() => {
     if (currentLayerGeoData && (currentLayerName || layerName)) {
-      mapInitRef.current?.on("click", currentLayerName || layerName, (e: any) => {
+      mapInitRef.current?.on("click", 'unclustered' + (currentLayerName || layerName), (e: any) => {
         if (mapInitRef.current)
           mapInitRef.current.getCanvas().style.cursor = "pointer";
 
@@ -282,34 +345,92 @@ export const useMap = (
   useEffect(() => {
     mapInitRef.current?.on("style.load", () => {
       if (currentLayerGeoData) {
-        mapInitRef.current?.addSource(currentLayerName, {
+
+        mapInitRef.current?.addSource((currentLayerName || layerName), {
           type: "geojson",
           data: currentLayerGeoData,
+          cluster: true,
+          clusterMaxZoom: 14,
+          clusterRadius: 30
         });
         // Add a symbol layer
 
         mapInitRef.current?.addLayer({
-          id: currentLayerName,
+          id: (currentLayerName || layerName),
           type: "circle",
-          source: currentLayerName,
+          source: (currentLayerName || layerName),
+          filter: ['has', 'point_count'],
+
           paint: {
-            "circle-radius": 5,
-            "circle-stroke-width": 2,
-            "circle-color": "red",
-            "circle-stroke-color": "white",
+            'circle-color': [
+              'step',
+              ['get', 'point_count'],
+              '#51bbd6',
+              100,
+              '#f1f075',
+              750,
+              '#f28cb1'
+            ],
+            'circle-radius': [
+              'step',
+              ['get', 'point_count'],
+              20,
+              100,
+              30,
+              750,
+              40
+            ]
           },
           layout: {
             visibility: "visible",
-            // 'icon-image': layerName,
-
-            // 'text-font': [
-            //     'Open Sans Semibold',
-            //     'Arial Unicode MS Bold'
-            // ],
-            // 'text-offset': [0, 1.25],
-            // 'text-anchor': 'top'
           },
         });
+        mapInitRef.current?.addLayer({
+          id: 'cluster-count' + (currentLayerName || layerName),
+          type: 'symbol',
+          source: (currentLayerName || layerName),
+          filter: ['has', 'point_count'],
+          layout: {
+            'text-field': ['get', 'point_count_abbreviated'],
+            'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+            'text-size': 12
+          }
+        });
+        mapInitRef.current?.addLayer({
+          id: 'unclustered' + (currentLayerName || layerName),
+          type: 'circle',
+          source: (currentLayerName || layerName),
+          filter: ['!', ['has', 'point_count']],
+          paint: {
+            'circle-color': '#11b4da',
+            'circle-radius': 4,
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#fff'
+          }
+        });
+        mapInitRef.current?.on('click', (currentLayerName || layerName), (e) => {
+          const features = mapInitRef.current?.queryRenderedFeatures(e.point, {
+            layers: [layerName]
+          });
+          const clusterId = features?.[0].properties?.cluster_id;
+          const source: mapboxgl.GeoJSONSource = mapInitRef.current?.getSource((currentLayerName || layerName)) as mapboxgl.GeoJSONSource
+
+
+          source.getClusterExpansionZoom(
+            clusterId,
+            (err: any, zoom: any) => {
+              if (err) return;
+              if (features?.[0].geometry.type === 'Point') {
+                mapInitRef.current?.easeTo({
+                  center: [features?.[0].geometry.coordinates[0], features?.[0].geometry.coordinates[1]],
+                  zoom: zoom
+                });
+              }
+
+            }
+          );
+        });
+
       }
     });
   }, [currentLayerGeoData]);
